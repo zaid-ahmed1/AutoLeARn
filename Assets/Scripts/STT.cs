@@ -3,12 +3,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.IO;
+using TMPro;
 
 public class STT : MonoBehaviour
 {
-    [SerializeField] private Button recordButton;
+    [SerializeField] private Toggle recordToggle;
     [SerializeField] private Image progressBar;
-    [SerializeField] private Text message;
+    [SerializeField] private TextMeshProUGUI message;
 
     private readonly string fileName = "output.wav";
     private readonly int duration = 5;
@@ -18,6 +19,7 @@ public class STT : MonoBehaviour
 
     private string apiUrl = "http://localhost:5000/transcribe"; // Replace with actual API URL
     private string selectedMic = null;
+    private Coroutine recordingCoroutine;
 
     private void Start()
     {
@@ -28,22 +30,54 @@ public class STT : MonoBehaviour
         if (devices.Length == 0)
         {
             message.text = "No microphone detected!";
-            recordButton.interactable = false;
+            recordToggle.interactable = false;
             return;
         }
 
         // Print all available microphones
         Debug.Log("Available Microphones:");
-        for (int i = 0; i < devices.Length; i++)
+        foreach (var device in devices)
         {
-            Debug.Log($"[{i}] {devices[i]}");
+            Debug.Log(device);
         }
 
         // Select the first microphone
         selectedMic = devices[0];
 
-        recordButton.onClick.AddListener(StartRecording);
+        // Add listener for the toggle
+        recordToggle.onValueChanged.AddListener(ToggleRecording);
 #endif
+    }
+
+    private void ToggleRecording(bool isOn)
+    {
+        if (isOn)
+        {
+            message.text = "Listening...";
+            recordingCoroutine = StartCoroutine(AutoRecordLoop());
+        }
+        else
+        {
+            if (recordingCoroutine != null)
+            {
+                StopCoroutine(recordingCoroutine);
+                recordingCoroutine = null;
+            }
+            isRecording = false;
+            progressBar.fillAmount = 0f;
+            message.text = "Stopped.";
+        }
+    }
+
+    private IEnumerator AutoRecordLoop()
+    {
+        while (recordToggle.isOn)
+        {
+            StartRecording();
+            yield return new WaitForSeconds(duration);
+            EndRecording();
+            yield return new WaitForSeconds(1f); // Small delay before restarting
+        }
     }
 
     private void StartRecording()
@@ -51,7 +85,6 @@ public class STT : MonoBehaviour
         if (selectedMic == null) return;
 
         isRecording = true;
-        recordButton.interactable = false;
         time = 0f;
 
 #if !UNITY_WEBGL
@@ -98,7 +131,6 @@ public class STT : MonoBehaviour
                 message.text = "Error: " + www.error;
             }
         }
-        recordButton.interactable = true;
     }
 
     private void Update()
@@ -107,17 +139,10 @@ public class STT : MonoBehaviour
         {
             time += Time.deltaTime;
             progressBar.fillAmount = time / duration;
-
-            if (time >= duration)
-            {
-                time = 0;
-                isRecording = false;
-                EndRecording();
-            }
         }
         else
         {
-            progressBar.fillAmount = 0f; // Reset the progress bar when not recording
+            progressBar.fillAmount = 0f; // Reset when not recording
         }
     }
 

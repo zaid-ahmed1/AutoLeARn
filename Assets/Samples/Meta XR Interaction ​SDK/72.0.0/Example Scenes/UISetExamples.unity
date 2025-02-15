@@ -38412,30 +38412,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1411571053}
-  - component: {fileID: 1411571052}
+  - component: {fileID: 1411571054}
   m_Layer: 0
-  m_Name: Whisper
+  m_Name: STT
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1411571052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1411571051}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a50c06d6aa656da4a97fe6e4669896bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  recordButton: {fileID: 484621852}
-  progressBar: {fileID: 1950797726}
-  message: {fileID: 1116416707}
-  dropdown: {fileID: 1753813065}
 --- !u!4 &1411571053
 Transform:
   m_ObjectHideFlags: 0
@@ -38451,6 +38435,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1411571054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411571051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da25586fd9790e40ac19c69ab0810a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  recordToggle: {fileID: 188438166063324131}
+  progressBar: {fileID: 0}
+  message: {fileID: 5978868642241548023}
 --- !u!1 &1413348127
 GameObject:
   m_ObjectHideFlags: 0
