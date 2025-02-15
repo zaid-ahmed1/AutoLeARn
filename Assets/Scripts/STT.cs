@@ -9,7 +9,6 @@ public class STT : MonoBehaviour
     [SerializeField] private Button recordButton;
     [SerializeField] private Image progressBar;
     [SerializeField] private Text message;
-    [SerializeField] private Dropdown dropdown;
 
     private readonly string fileName = "output.wav";
     private readonly int duration = 5;
@@ -18,39 +17,45 @@ public class STT : MonoBehaviour
     private float time;
 
     private string apiUrl = "http://localhost:5000/transcribe"; // Replace with actual API URL
+    private string selectedMic = null;
 
     private void Start()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-        dropdown.options.Add(new Dropdown.OptionData("Microphone not supported on WebGL"));
+        message.text = "Microphone not supported on WebGL";
 #else
-        foreach (var device in Microphone.devices)
+        var devices = Microphone.devices;
+        if (devices.Length == 0)
         {
-            dropdown.options.Add(new Dropdown.OptionData(device));
+            message.text = "No microphone detected!";
+            recordButton.interactable = false;
+            return;
         }
 
+        // Print all available microphones
+        Debug.Log("Available Microphones:");
+        for (int i = 0; i < devices.Length; i++)
+        {
+            Debug.Log($"[{i}] {devices[i]}");
+        }
+
+        // Select the first microphone
+        selectedMic = devices[0];
+
         recordButton.onClick.AddListener(StartRecording);
-        dropdown.onValueChanged.AddListener(ChangeMicrophone);
-
-        var index = PlayerPrefs.GetInt("user-mic-device-index");
-        dropdown.SetValueWithoutNotify(index);
 #endif
-    }
-
-    private void ChangeMicrophone(int index)
-    {
-        PlayerPrefs.SetInt("user-mic-device-index", index);
     }
 
     private void StartRecording()
     {
-        isRecording = true;
-        recordButton.enabled = false;
+        if (selectedMic == null) return;
 
-        var index = PlayerPrefs.GetInt("user-mic-device-index");
+        isRecording = true;
+        recordButton.interactable = false;
+        time = 0f;
 
 #if !UNITY_WEBGL
-        clip = Microphone.Start(dropdown.options[index].text, false, duration, 44100);
+        clip = Microphone.Start(selectedMic, false, duration, 44100);
 #endif
     }
 
@@ -63,7 +68,7 @@ public class STT : MonoBehaviour
     private IEnumerator ProcessRecording()
     {
 #if !UNITY_WEBGL
-        Microphone.End(null);
+        Microphone.End(selectedMic);
 #endif
 
         byte[] data = SaveWav.Save(fileName, clip);
@@ -93,6 +98,7 @@ public class STT : MonoBehaviour
                 message.text = "Error: " + www.error;
             }
         }
+        recordButton.interactable = true;
     }
 
     private void Update()
@@ -108,6 +114,10 @@ public class STT : MonoBehaviour
                 isRecording = false;
                 EndRecording();
             }
+        }
+        else
+        {
+            progressBar.fillAmount = 0f; // Reset the progress bar when not recording
         }
     }
 
