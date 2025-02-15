@@ -106,4 +106,5 @@ public class CarInfo
     public string make;
     public string model;
     public int year;
+    public string issue_with_car;
 }

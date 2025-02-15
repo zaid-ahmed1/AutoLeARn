@@ -3,20 +3,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.IO;
+using System.Text;
 using TMPro;
 
 public class STT : MonoBehaviour
 {
-    [SerializeField] private Toggle recordToggle;
-    [SerializeField] private Image progressBar;
+    [SerializeField] private Button recordButton;
     [SerializeField] private TextMeshProUGUI message;
 
     private readonly string fileName = "output.wav";
-    private readonly int duration = 5;
+    private readonly int duration = 5; // Fixed recording duration in seconds
     private AudioClip clip;
     private bool isRecording;
-    private float time;
-
     private string apiUrl = "http://localhost:5000/api/transcribe"; // Replace with actual API URL
     private string selectedMic = null;
     private Coroutine recordingCoroutine;
@@ -30,7 +28,7 @@ public class STT : MonoBehaviour
         if (devices.Length == 0)
         {
             message.text = "No microphone detected!";
-            recordToggle.interactable = false;
+            recordButton.interactable = false;
             return;
         }
 
@@ -44,40 +42,25 @@ public class STT : MonoBehaviour
         // Select the first microphone
         selectedMic = devices[0];
 
-        // Add listener for the toggle
-        recordToggle.onValueChanged.AddListener(ToggleRecording);
+        // Add listener for the button
+        recordButton.onClick.AddListener(OnRecordButtonPressed);
 #endif
     }
 
-    private void ToggleRecording(bool isOn)
+    public void OnRecordButtonPressed()
     {
-        if (isOn)
+        if (!isRecording)
         {
             message.text = "Listening...";
-            recordingCoroutine = StartCoroutine(AutoRecordLoop());
-        }
-        else
-        {
-            if (recordingCoroutine != null)
-            {
-                StopCoroutine(recordingCoroutine);
-                recordingCoroutine = null;
-            }
-            isRecording = false;
-            progressBar.fillAmount = 0f;
-            message.text = "Stopped.";
+            recordingCoroutine = StartCoroutine(RecordForDuration());
         }
     }
 
-    private IEnumerator AutoRecordLoop()
+    private IEnumerator RecordForDuration()
     {
-        while (recordToggle.isOn)
-        {
-            StartRecording();
-            yield return new WaitForSeconds(duration);
-            EndRecording();
-            yield return new WaitForSeconds(1f); // Small delay before restarting
-        }
+        StartRecording();
+        yield return new WaitForSeconds(duration); // Wait for the fixed duration
+        EndRecording();
     }
 
     private void StartRecording()
@@ -85,7 +68,6 @@ public class STT : MonoBehaviour
         if (selectedMic == null) return;
 
         isRecording = true;
-        time = 0f;
 
 #if !UNITY_WEBGL
         clip = Microphone.Start(selectedMic, false, duration, 44100);
@@ -94,6 +76,7 @@ public class STT : MonoBehaviour
 
     private void EndRecording()
     {
+        isRecording = false;
         message.text = "Transcribing...";
         StartCoroutine(ProcessRecording());
     }
@@ -125,6 +108,11 @@ public class STT : MonoBehaviour
             {
                 var responseJson = JsonUtility.FromJson<TranscriptionResponse>(www.downloadHandler.text);
                 message.text = responseJson.transcript;
+
+                // Invoke ConvertLangToStruct if transcription is successful
+                string textToConvert = responseJson.transcript;
+                string structType = "CarInfo"; // Change this to the desired struct type
+                StartCoroutine(ConvertLangToStruct(textToConvert, structType));
             }
             else
             {
@@ -133,16 +121,47 @@ public class STT : MonoBehaviour
         }
     }
 
-    private void Update()
+    private IEnumerator ConvertLangToStruct(string text, string structType)
     {
-        if (isRecording)
+        TextStructData data = new TextStructData { text = text, type = structType };
+        string jsonData = JsonUtility.ToJson(data);
+
+        using (UnityWebRequest request = new UnityWebRequest("http://localhost:5000/api/lang_to_struct", "POST"))
         {
-            time += Time.deltaTime;
-            progressBar.fillAmount = time / duration;
-        }
-        else
-        {
-            progressBar.fillAmount = 0f; // Reset when not recording
+            Debug.Log(text);
+            Debug.Log(structType);
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"Converted struct: {request.downloadHandler.text}");
+
+                // Parse the JSON response
+                CarInfo parsedResponse = JsonUtility.FromJson<CarInfo>(request.downloadHandler.text);
+
+                // Check if any field is missing or invalid
+                if (parsedResponse.year == -1 || 
+                    parsedResponse.issue_with_car == "Unknown" || 
+                    parsedResponse.make == "Unknown" || 
+                    parsedResponse.model == "Unknown")
+                {
+                    message.text = "Sorry, please ask again - we need the make, model, year, and service.";
+                }
+                else
+                {
+                    message.text = $"Issue: {parsedResponse.issue_with_car}\nMake: {parsedResponse.make}\nModel: {parsedResponse.model}\nYear: {parsedResponse.year}";
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to convert text to struct: {request.error}");
+                message.text = "Error processing request.";
+            }
         }
     }
 
@@ -150,5 +169,12 @@ public class STT : MonoBehaviour
     private class TranscriptionResponse
     {
         public string transcript;
+    }
+
+    [System.Serializable]
+    private class TextStructData
+    {
+        public string text;
+        public string type;
     }
 }
