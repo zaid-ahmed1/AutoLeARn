@@ -17,7 +17,7 @@ public class STT : MonoBehaviour
     private bool isRecording;
     private float time;
 
-    private string apiUrl = "http://localhost:5000/transcribe"; // Replace with actual API URL
+    private string apiUrl = "http://localhost:5000/api/transcribe"; // Replace with actual API URL
     private string selectedMic = null;
     private Coroutine recordingCoroutine;
 

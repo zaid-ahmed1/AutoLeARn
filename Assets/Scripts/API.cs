@@ -7,34 +7,51 @@ using Debug = UnityEngine.Debug;
 
 public class API : MonoBehaviour
 {
-    private const string API_URL = "http://localhost:5000";
-
-    public void CalculateNumbers(float[] numbers)
-    {
-        StartCoroutine(SendCalculateRequest(numbers));
-    }
-
-    public void ProcessText(string text)
-    {
-        StartCoroutine(SendProcessTextRequest(text));
-    }
+    private const string API_URL = "http://localhost:5000/api";
 
     public void AnalyzeScreen(string windowTitle)
     {
         Debug.Log("Sending request to /analyze_screen");
-        StartCoroutine(SendAnalyzeScreenRequest(windowTitle));
+        StartCoroutine(SendPostRequest("/analyze_screen", new ScreenData { window_title = windowTitle }));
     }
 
-    private IEnumerator SendCalculateRequest(float[] numbers)
+    public void GetWindows()
     {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
+        Debug.Log("Sending request to /windows");
+        StartCoroutine(SendGetRequest("/windows"));
+    }
 
-        NumbersData data = new NumbersData { numbers = numbers };
+    public void TakeWindowScreenshot(string windowTitle)
+    {
+        Debug.Log("Sending request to /window_screenshot");
+        StartCoroutine(SendPostRequest("/window_screenshot", new ScreenData { window_title = windowTitle }));
+    }
+
+    public void ConvertLangToStruct(string text, string type)
+    {
+        Debug.Log("Sending request to /lang_to_struct");
+        StartCoroutine(SendPostRequest("/lang_to_struct", new TextStructData { text = text, type = type }));
+    }
+
+    public void QueryAgent(string previousText, string text, CarInfo carInfo, string imagePath = null)
+    {
+        Debug.Log("Sending request to /agent");
+        StartCoroutine(SendPostRequest("/agent", new AgentData { previous_text = previousText, text = text, car_info = carInfo, image_path = imagePath }));
+    }
+
+    private IEnumerator SendGetRequest(string endpoint)
+    {
+        using (UnityWebRequest request = UnityWebRequest.Get(API_URL + endpoint))
+        {
+            yield return request.SendWebRequest();
+            HandleResponse(request);
+        }
+    }
+
+    private IEnumerator SendPostRequest<T>(string endpoint, T data)
+    {
         string jsonData = JsonUtility.ToJson(data);
-        UnityEngine.Debug.Log("Sending JSON data to /calculate: " + jsonData);
-
-        using (UnityWebRequest request = new UnityWebRequest(API_URL + "/calculate", "POST"))
+        using (UnityWebRequest request = new UnityWebRequest(API_URL + endpoint, "POST"))
         {
             byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -42,119 +59,51 @@ public class API : MonoBehaviour
             request.SetRequestHeader("Content-Type", "application/json");
 
             yield return request.SendWebRequest();
-
-            stopwatch.Stop();
-            UnityEngine.Debug.Log("Time taken for /calculate: " + stopwatch.ElapsedMilliseconds + " ms");
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                UnityEngine.Debug.Log("Response: " + request.downloadHandler.text);
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("Error: " + request.error);
-                UnityEngine.Debug.LogError("Response: " + request.downloadHandler.text);
-            }
+            HandleResponse(request);
         }
     }
 
-    private IEnumerator SendProcessTextRequest(string text)
+    private void HandleResponse(UnityWebRequest request)
     {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        TextData data = new TextData { text = text };
-        string jsonData = JsonUtility.ToJson(data);
-        UnityEngine.Debug.Log("Sending JSON data to /process_text: " + jsonData);
-
-        using (UnityWebRequest request = new UnityWebRequest(API_URL + "/process_text", "POST"))
+        if (request.result == UnityWebRequest.Result.Success)
         {
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-
-            yield return request.SendWebRequest();
-
-            stopwatch.Stop();
-            UnityEngine.Debug.Log("Time taken for /process_text: " + stopwatch.ElapsedMilliseconds + " ms");
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                UnityEngine.Debug.Log("Response: " + request.downloadHandler.text);
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("Error: " + request.error);
-                UnityEngine.Debug.LogError("Response: " + request.downloadHandler.text);
-            }
+            Debug.Log("Success Response: " + request.downloadHandler.text);
         }
-    }
-
-    private IEnumerator SendAnalyzeScreenRequest(string windowTitle)
-    {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        ScreenData data = new ScreenData { window_title = windowTitle };
-        string jsonData = JsonUtility.ToJson(data);
-        UnityEngine.Debug.Log($"Sending request to /analyze_screen");
-        UnityEngine.Debug.Log($"Window Title: '{windowTitle}'");
-        UnityEngine.Debug.Log($"JSON payload: {jsonData}");
-
-        using (UnityWebRequest request = new UnityWebRequest(API_URL + "/analyze_screen", "POST"))
+        else
         {
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-
-            yield return request.SendWebRequest();
-
-            stopwatch.Stop();
-            UnityEngine.Debug.Log($"Request completed in {stopwatch.ElapsedMilliseconds}ms");
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                UnityEngine.Debug.Log($"Success Response: {request.downloadHandler.text}");
-            }
-            else
-            {
-                UnityEngine.Debug.LogError($"Failed with error: {request.error}");
-                UnityEngine.Debug.LogError($"Response Code: {request.responseCode}");
-                UnityEngine.Debug.LogError($"Error Response: {request.downloadHandler.text}");
-            
-                // Print headers for debugging
-                var headers = request.GetResponseHeaders();
-                if (headers != null)
-                {
-                    foreach (var header in headers)
-                    {
-                        UnityEngine.Debug.Log($"Header - {header.Key}: {header.Value}");
-                    }
-                }
-            }
+            Debug.LogError("Failed with error: " + request.error);
+            Debug.LogError("Response Code: " + request.responseCode);
+            Debug.LogError("Error Response: " + request.downloadHandler.text);
         }
     }
 }
 
-// Wrapper class for the numbers array
-[System.Serializable]
-public class NumbersData
-{
-    public float[] numbers;
-}
-
-// Wrapper class for the text string
-[System.Serializable]
-public class TextData
-{
-    public string text;
-}
-
-// Wrapper class for the screen data
 [System.Serializable]
 public class ScreenData
 {
     public string window_title;
+}
+
+[System.Serializable]
+public class TextStructData
+{
+    public string text;
+    public string type;
+}
+
+[System.Serializable]
+public class AgentData
+{
+    public string previous_text;
+    public string text;
+    public CarInfo car_info;
+    public string image_path;
+}
+
+[System.Serializable]
+public class CarInfo
+{
+    public string make;
+    public string model;
+    public int year;
 }
