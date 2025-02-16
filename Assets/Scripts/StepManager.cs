@@ -34,6 +34,7 @@ public class StepManager : MonoBehaviour
                 break;
             }
         }
+        Debug.Log("Current step index: " + currentStepIndex);
         if (response.youtube_link == "")
         {
             videoPlayer.enabled = false;
