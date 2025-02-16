@@ -30,7 +30,7 @@ public class API : MonoBehaviour
     private const string API_URL = "http://localhost:5000/api";
     public APIResponse response;
     public static CarInfo carInfo;
-
+    public StepManager stepManager;
     public void GetWindows()
     {
         Debug.Log("Sending request to /windows");
@@ -132,6 +132,9 @@ public class API : MonoBehaviour
                                 }
                                 Debug.Log("VVV");
                                 Debug.Log(JsonUtility.ToJson(response.step_breakdown, true));
+                                
+                                stepManager.Initialize(response.step_breakdown); 
+                                
                                 break;
 
                             default:
