@@ -223,6 +223,7 @@ public class API : MonoBehaviour
     {
         public int step_number;
         public string step_description;
+        public bool is_current_step;
     }
 
     [System.Serializable]

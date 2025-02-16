@@ -14,12 +14,23 @@ public class StepManager : MonoBehaviour
     public Sprite defaultStep; // Public field for the default sprite
 
     public void Initialize(StepsTutorial steps)
-    {   
+    {
         canvas.SetActive(true);
         stepsTutorial = steps;
         currentStepIndex = 0;
         sttText.text = "Press the record button to start recording your voice";
         stepImage.sprite = defaultStep;
+
+        // Find the current step
+        for (int i = 0; i < stepsTutorial.steps.Length; i++)
+        {
+            if (stepsTutorial.steps[i].is_current_step)
+            {
+                currentStepIndex = i;
+                break;
+            }
+        }
+
         UpdateUI();
     }
 
@@ -27,7 +38,9 @@ public class StepManager : MonoBehaviour
     {
         if (stepsTutorial != null && currentStepIndex < stepsTutorial.steps.Length - 1)
         {
+            stepsTutorial.steps[currentStepIndex].is_current_step = false;
             currentStepIndex++;
+            stepsTutorial.steps[currentStepIndex].is_current_step = true;
             UpdateUI();
         }
     }
@@ -36,7 +49,9 @@ public class StepManager : MonoBehaviour
     {
         if (stepsTutorial != null && currentStepIndex > 0)
         {
+            stepsTutorial.steps[currentStepIndex].is_current_step = false;
             currentStepIndex--;
+            stepsTutorial.steps[currentStepIndex].is_current_step = true;
             UpdateUI();
         }
     }
