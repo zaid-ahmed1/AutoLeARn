@@ -49,6 +49,7 @@ public class STT : MonoBehaviour
 
     public void OnRecordButtonPressed()
     {
+        Debug.Log("Record button pressed");
         if (!isRecording)
         {
             message.text = "Listening...";
@@ -155,6 +156,7 @@ public class STT : MonoBehaviour
                 else
                 {
                     message.text = $"Issue: {parsedResponse.issue_with_car}\nMake: {parsedResponse.make}\nModel: {parsedResponse.model}\nYear: {parsedResponse.year}";
+                    API.carInfo = parsedResponse;
                 }
             }
             else

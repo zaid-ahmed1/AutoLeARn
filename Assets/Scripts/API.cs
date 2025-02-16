@@ -8,7 +8,8 @@ using Debug = UnityEngine.Debug;
 public class API : MonoBehaviour
 {
     private const string API_URL = "http://localhost:5000/api";
-
+    public APIResponse response;
+    public static CarInfo carInfo;
     public void AnalyzeScreen(string windowTitle)
     {
         Debug.Log("Sending request to /analyze_screen");
@@ -25,6 +26,7 @@ public class API : MonoBehaviour
     {
         Debug.Log("Sending request to /window_screenshot");
         StartCoroutine(SendPostRequest("/window_screenshot", new ScreenData { window_title = windowTitle }));
+        QueryAgent(carInfo, response.image_file_name);
     }
 
     public void ConvertLangToStruct(string text, string type)
@@ -33,10 +35,10 @@ public class API : MonoBehaviour
         StartCoroutine(SendPostRequest("/lang_to_struct", new TextStructData { text = text, type = type }));
     }
 
-    public void QueryAgent(string previousText, string text, CarInfo carInfo, string imagePath = null)
+    public void QueryAgent(CarInfo carInfo, string imagePath)
     {
         Debug.Log("Sending request to /agent");
-        StartCoroutine(SendPostRequest("/agent", new AgentData { previous_text = previousText, text = text, car_info = carInfo, image_path = imagePath }));
+        StartCoroutine(SendPostRequest("/agent", new AgentData { car_info = carInfo, image_file_name = imagePath }));
     }
 
     private IEnumerator SendGetRequest(string endpoint)
@@ -44,7 +46,7 @@ public class API : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Get(API_URL + endpoint))
         {
             yield return request.SendWebRequest();
-            HandleResponse(request);
+            HandleResponse(request, endpoint);
         }
     }
 
@@ -59,15 +61,52 @@ public class API : MonoBehaviour
             request.SetRequestHeader("Content-Type", "application/json");
 
             yield return request.SendWebRequest();
-            HandleResponse(request);
+            HandleResponse(request, endpoint);
         }
     }
 
-    private void HandleResponse(UnityWebRequest request)
+    private void HandleResponse(UnityWebRequest request, string endpoint)
     {
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("Success Response: " + request.downloadHandler.text);
+            Debug.Log($"Success Response from {endpoint}: " + request.downloadHandler.text);
+
+            // Parse the JSON response into the APIResponse class
+            response = JsonUtility.FromJson<APIResponse>(request.downloadHandler.text);
+
+            if (response.success)
+            {
+                // Handle success cases based on the endpoint
+                switch (endpoint)
+                {
+                    case "/window_screenshot":
+                        if (!string.IsNullOrEmpty(response.image_file_name))
+                        {
+                            // Save the image name to a variable
+                            string savedImageName = response.image_file_name;
+                            Debug.Log("Saved Image Name: " + savedImageName);
+
+                            // You can now use the savedImageName variable as needed
+                        }
+                        break;
+
+                    case "/agent":
+                        if (!string.IsNullOrEmpty(response.step_breakdown))
+                        {
+                            Debug.Log("Step Breakdown: " + response.step_breakdown);
+                            Debug.Log("Original Text: " + response.original_text);
+                        }
+                        break;
+
+                    default:
+                        Debug.Log("Response received for endpoint: " + endpoint);
+                        break;
+                }
+            }
+            else
+            {
+                Debug.LogError($"API Error: {response.error}");
+            }
         }
         else
         {
@@ -94,10 +133,8 @@ public class TextStructData
 [System.Serializable]
 public class AgentData
 {
-    public string previous_text;
-    public string text;
     public CarInfo car_info;
-    public string image_path;
+    public string image_file_name;
 }
 
 [System.Serializable]
@@ -107,4 +144,16 @@ public class CarInfo
     public string model;
     public int year;
     public string issue_with_car;
+}
+
+
+[System.Serializable]
+public class APIResponse
+{
+    public bool success;
+    public string message;
+    public string image_file_name; // Store the image name here
+    public string step_breakdown; // For /agent endpoint
+    public string original_text; // For /agent endpoint
+    public string error; // Store error messages if any
 }
