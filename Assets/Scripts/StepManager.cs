@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 public class StepManager : MonoBehaviour
 {
@@ -12,15 +13,18 @@ public class StepManager : MonoBehaviour
     public TextMeshProUGUI sttText;
     public Image stepImage; // Public field for the sprite
     public Sprite defaultStep; // Public field for the default sprite
-
-    public void Initialize(StepsTutorial steps)
+    public VideoPlayer videoPlayer;
+    public APIResponse response;
+    public API api;
+    public void Initialize(APIResponse response)
     {
         canvas.SetActive(true);
-        stepsTutorial = steps;
+        stepsTutorial = response.step_breakdown;
+        // videoPlayer.url = response.video_path;
+        // Debug.Log("Video path: " + response.video_path);
         currentStepIndex = 0;
         sttText.text = "Press the record button to start recording your voice";
         stepImage.sprite = defaultStep;
-
         // Find the current step
         for (int i = 0; i < stepsTutorial.steps.Length; i++)
         {
@@ -30,7 +34,16 @@ public class StepManager : MonoBehaviour
                 break;
             }
         }
-
+        if (response.youtube_link == "")
+        {
+            videoPlayer.enabled = false;
+        }
+        else
+        {        
+            videoPlayer.url = response.youtube_link;
+            videoPlayer.Play();
+        }
+        
         UpdateUI();
     }
 

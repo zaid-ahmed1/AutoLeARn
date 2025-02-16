@@ -50,6 +50,12 @@ public class API : MonoBehaviour
         QueryAgent(carInfo, response.filename);
     }
 
+    public void DownloadYouTubeVideo(string url)
+    {
+        Debug.Log("Sending request to /yt_dl");
+        StartCoroutine(SendPostRequest("/yt_dl", new YouTubeDownloadData { url = url }));
+    }
+    
     public void ConvertLangToStruct(string text, string type)
     {
         Debug.Log("Sending request to /lang_to_struct");
@@ -106,6 +112,7 @@ public class API : MonoBehaviour
                     Debug.Log($"Filename: {response.filename}");
                     Debug.Log($"Original Text: {response.original_text}");
                     Debug.Log($"Error: {response.error}");
+                    Debug.Log($"YT Link: {response.youtube_link}");
 
                     if (response.success)
                     {
@@ -128,15 +135,14 @@ public class API : MonoBehaviour
                                 if (response.step_breakdown != null)
                                 {
                                     Debug.Log("Step Breakdown: " + JsonUtility.ToJson(response.step_breakdown, true));
-                                    Debug.Log("Original Text: " + response.original_text);
+
+                                    Debug.Log("YT Link: " + response.youtube_link);
                                 }
-                                Debug.Log("VVV");
                                 Debug.Log(JsonUtility.ToJson(response.step_breakdown, true));
-                                
-                                stepManager.Initialize(response.step_breakdown); 
+                                stepManager.Initialize(response); 
                                 
                                 break;
-
+                            
                             default:
                                 Debug.Log("Response received for endpoint: " + endpoint);
                                 break;
@@ -175,6 +181,8 @@ public class API : MonoBehaviour
             }
         }
     }
+    
+
 }
 
 [System.Serializable]
@@ -216,6 +224,8 @@ public class API : MonoBehaviour
         public StepsTutorial step_breakdown; // For /agent endpoint
         public string original_text; // For /agent endpoint
         public string error; // Store error messages if any
+        public string youtube_link; // Store the video path here
+
     }
     
     [System.Serializable]
@@ -224,6 +234,7 @@ public class API : MonoBehaviour
         public int step_number;
         public string step_description;
         public bool is_current_step;
+        
     }
 
     [System.Serializable]
@@ -234,4 +245,10 @@ public class API : MonoBehaviour
         public string additional_context;
         public string[] sources;
         public Step[] steps;
+    }
+    
+    [System.Serializable]
+    public class YouTubeDownloadData
+    {
+        public string url;
     }
