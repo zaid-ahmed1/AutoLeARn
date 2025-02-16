@@ -8,11 +8,18 @@ public class StepManager : MonoBehaviour
     public TextMeshProUGUI stepNumberText;
     private StepsTutorial stepsTutorial;
     private int currentStepIndex = 0;
+    public GameObject canvas;
+    public TextMeshProUGUI sttText;
+    public Image stepImage; // Public field for the sprite
+    public Sprite defaultStep; // Public field for the default sprite
 
     public void Initialize(StepsTutorial steps)
-    {
+    {   
+        canvas.SetActive(true);
         stepsTutorial = steps;
         currentStepIndex = 0;
+        sttText.text = "Press the record button to start recording your voice";
+        stepImage.sprite = defaultStep;
         UpdateUI();
     }
 
