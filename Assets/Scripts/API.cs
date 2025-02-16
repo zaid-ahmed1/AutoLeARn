@@ -96,9 +96,17 @@ public class API : MonoBehaviour
             {
                 // Parse the JSON response into the APIResponse class
                 response = JsonUtility.FromJson<APIResponse>(request.downloadHandler.text);
+                Debug.Log("Response object:");
+                Debug.Log(JsonUtility.ToJson(response, true)); // Pretty print the entire response object
 
                 if (response != null)
                 {
+                    Debug.Log($"Success: {response.success}");
+                    Debug.Log($"Message: {response.message}");
+                    Debug.Log($"Filename: {response.filename}");
+                    Debug.Log($"Original Text: {response.original_text}");
+                    Debug.Log($"Error: {response.error}");
+
                     if (response.success)
                     {
                         // Handle success cases based on the endpoint
@@ -114,16 +122,16 @@ public class API : MonoBehaviour
 
                                     // You can now use the savedImageName variable as needed
                                 }
-
                                 break;
 
                             case "/agent":
-                                if (!string.IsNullOrEmpty(response.step_breakdown))
+                                if (response.step_breakdown != null)
                                 {
-                                    Debug.Log("Step Breakdown: " + response.step_breakdown);
+                                    Debug.Log("Step Breakdown: " + JsonUtility.ToJson(response.step_breakdown, true));
                                     Debug.Log("Original Text: " + response.original_text);
                                 }
-
+                                Debug.Log("VVV");
+                                Debug.Log(JsonUtility.ToJson(response.step_breakdown, true));
                                 break;
 
                             default:
@@ -134,11 +142,16 @@ public class API : MonoBehaviour
                     else
                     {
                         Debug.LogError($"API Error: {response.error}");
+                        if (endpoint == "/agent")
+                        {
+                            Debug.Log("Can't call a function");
+                            return;
+                        }
                     }
                 }
                 else
                 {
-                    Debug.LogError("Failed to parse API response.");
+                    Debug.LogError("Response is null.");
                 }
             }
             catch (System.Exception ex)
@@ -153,6 +166,10 @@ public class API : MonoBehaviour
             Debug.LogError($"Response Code: {request.responseCode}");
             Debug.LogError($"Error Response: {request.downloadHandler.text}");
             Debug.LogError($"Error occurred at endpoint: {endpoint}");
+            if (endpoint == "/agent")
+            {
+                Debug.Log("Can't call a function");
+            }
         }
     }
 }
@@ -193,8 +210,24 @@ public class API : MonoBehaviour
         public bool success;
         public string message;
         public string filename; // Store the image name here
-        public string step_breakdown; // For /agent endpoint
+        public StepsTutorial step_breakdown; // For /agent endpoint
         public string original_text; // For /agent endpoint
         public string error; // Store error messages if any
     }
     
+    [System.Serializable]
+    public class Step
+    {
+        public int step_number;
+        public string step_description;
+    }
+
+    [System.Serializable]
+    public class StepsTutorial
+    {
+        public string title;
+        public string description;
+        public string additional_context;
+        public string[] sources;
+        public Step[] steps;
+    }
