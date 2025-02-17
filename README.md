@@ -1,5 +1,5 @@
 ## Demo Link:
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/NZYmF-WqMVU&t=3s/0.jpg)](https://www.youtube.com/watch?v=NZYmF-WqMVU&t=3s)
+[![Video](https://img.youtube.com/vi/NZYmF-WqMVU&t=3s/0.jpg)](https://www.youtube.com/watch?v=NZYmF-WqMVU&t=3s)
 # Inspiration
 
 ## Introduction
@@ -68,6 +68,10 @@ AutoLeARn will dramatically simplify car maintenance for users, making it both e
 2. **Performing Safety and Functionality Inspections for Car Dealerships & Used Car Lots**: AutoLeARn also has great potential for use in safety and functionality inspections at car dealerships and used car lots. The analyses provided by AutoLeARn can help these dealerships and used car lots in providing quick appraisals of cars and checking critical components to make sure that the vehicles meet the necessary standards before being sold. This not only makes the inspection process more efficient for dealerships, but will also improve trust and customer satisfaction as customers can feel confident knowing that the vehicle has been thoroughly checked using the latest standards and technology.
 
 ---
+
+## Backend Framework:
+As mentioned, there is a backend framework that handles the AI:
+https://github.com/Guuzzeji/AutoLeARn-backend
 
 # References
 (primarily from the customer insights section for background information)
